@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { type UserInfo } from '../types/auth';
+import api from '../api/apiClient';
 
 interface AuthContextType {
   user: UserInfo | null;
   isAuthenticated: boolean;
-  login: (user: UserInfo) => void;
+  login: (user: UserInfo, token?: string) => void;
   logout: () => void;
   loading: boolean;
   checkAuth: () => Promise<boolean>;
@@ -26,36 +27,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = (userData: UserInfo) => {
+  const login = (userData: UserInfo, token?: string) => {
     setUser(userData);
+    // Guardar token en localStorage para compatibilidad con producción
+    if (token) {
+      localStorage.setItem('auth_token', token);
+    }
   };
 
   const logout = async () => {
     try {
       // Llamar al endpoint de logout para eliminar la cookie HttpOnly
-      await fetch('/auth/logout', {
-        method: 'POST',
-        credentials: 'include'
-      });
+      await api.post('/auth/logout');
     } catch (error) {
       console.error('Error during logout:', error);
     } finally {
       setUser(null);
+      // Limpiar token del localStorage
+      localStorage.removeItem('auth_token');
     }
   };
 
   const checkAuth = async (): Promise<boolean> => {
     try {
-      const response = await fetch('/auth/me', {
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-        return true;
-      }
-      return false;
+      const response = await api.get('/auth/me');
+      setUser(response.data);
+      return true;
     } catch (error) {
       console.error('Error checking auth:', error);
       return false;

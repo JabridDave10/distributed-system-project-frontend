@@ -37,8 +37,8 @@ const LoginPage: React.FC = () => {
     try {
       const response = await login(formData);
 
-      // Guardar los datos del usuario (el token se maneja en cookies HttpOnly)
-      authLogin(response.user);
+      // Guardar los datos del usuario y el token
+      authLogin(response.user, response.access_token);
 
       // Login exitoso - redirigir al dashboard específico
       setSubmitError('');
